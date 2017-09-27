@@ -1,4 +1,4 @@
-package com.own.springboot;
+package com.wxserver;
 
 import org.apache.ibatis.session.SqlSessionFactory;
 import org.apache.tomcat.jdbc.pool.DataSource;
