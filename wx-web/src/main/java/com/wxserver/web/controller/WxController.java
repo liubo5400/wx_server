@@ -2,6 +2,7 @@ package com.wxserver.web.controller;
 
 import com.wxserver.common.Constants;
 import com.wxserver.common.utils.WeixinManager;
+import com.wxserver.web.cache.RedisCache;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.jeewx.api.wxbase.wxtoken.JwTokenAPI;
@@ -32,11 +33,11 @@ public class WxController {
         try {
             logger.info("======>appId:" + Constants.WEIXIN_APPID);
             logger.info("======>secret:" + Constants.WEIXIN_SECRET);
-            String accessToken = "";//RedisCache.getWxAccessToken(Constants.WEIXIN_APPID, Constants.WEIXIN_SECRET);
+            String accessToken = RedisCache.getWxAccessToken(Constants.WEIXIN_APPID, Constants.WEIXIN_SECRET);
             logger.info("======>accessToken:" + accessToken);
             String ticket = "";
             if (StringUtils.isNotEmpty(accessToken)) {
-                ticket = "";//RedisCache.getWxTicket(Constants.WEIXIN_APPID, accessToken);
+                ticket = RedisCache.getWxTicket(Constants.WEIXIN_APPID, accessToken);
             }
             if (StringUtils.isNoneBlank(ticket)) {
                 String decodeUrl = URLDecoder.decode(redirect_uri, "UTF-8");
