@@ -1,15 +1,12 @@
 package com.wxserver.web.cache;
 
 import com.wxserver.common.utils.RedisUtil;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jeewx.api.core.exception.WexinReqException;
 import org.jeewx.api.wxbase.wxtoken.JwTokenAPI;
+import org.jeewx.api.wxuser.user.model.Wxuser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.exceptions.JedisConnectionException;
-
-import java.util.List;
 
 /**
  * Created by bjliubo on 2015/10/14.
@@ -41,6 +38,14 @@ public class RedisCache {
         return ticket;
     }
 
+    public static String getWxUserInfo(String appId, String openId) {
+        return RedisUtil.get(getWxUserInfoKey(appId, openId));
+    }
+
+    public static void setWxUserInfo(String appId, String openId, String uinfo) {
+        RedisUtil.setObject(getWxUserInfoKey(appId, openId), uinfo);
+    }
+
     private static String getWxTicketKey(String appId) {
         return "wx:appId:" + appId + ":ticket";
     }
@@ -49,11 +54,15 @@ public class RedisCache {
         return "wx:appId:" + appId + ":accessToken";
     }
 
+    private static String getWxUserInfoKey(String appId, String openId) {
+        return "wx:appId:" + appId + ":openId:" + openId;
+    }
+
     /**
      * @param args
      */
     public static void main(String[] args) {
-        RedisUtil.set("aaa","1111");
+        RedisUtil.set("aaa", "1111");
         String aaa = RedisUtil.get("aaa");
         System.out.println(aaa);
     }

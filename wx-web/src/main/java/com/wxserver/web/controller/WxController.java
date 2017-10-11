@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jeewx.api.wxbase.wxtoken.JwTokenAPI;
 import org.jeewx.api.wxuser.user.JwUserAPI;
 import org.jeewx.api.wxuser.user.model.AccessToken;
+import org.jeewx.api.wxuser.user.model.Wxuser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
@@ -59,26 +60,41 @@ public class WxController {
 
     @RequestMapping(value = "/wx/userInfo", method = RequestMethod.GET)
     public Object wxUserInfo(@RequestParam(required = true) String code,
+                             @RequestParam(required = false, defaultValue = "") String openId,
                              @RequestParam(required = true) boolean isAuth) {
-        Map<String,String> result = new HashMap<String, String>();
+        Map<String, Object> result = new HashMap<String, Object>();
 
         AccessToken accessToken = JwUserAPI.getAccessTokenByCode(Constants.WEIXIN_APPID, Constants.WEIXIN_SECRET, code);
         if (null == accessToken) {
-            result.put("result","fail");
-            result.put("message","accessToken异常");
+            result.put("result", "fail");
+            result.put("message", "accessToken异常");
             return JSONObject.fromObject(result);
         }
+
         if (isAuth) {
-            String uinfo = WeixinManager.newInstance(Constants.WEIXIN_APPID, Constants.WEIXIN_SECRET).getUserInfo(accessToken.getAccess_token(), accessToken.getOpenid());
-            JSONObject jsonObject = JSONObject.fromObject(uinfo);
-            result.put("result","success");
-            result.put("headUrl",null == jsonObject.getString("headUrl")?"":jsonObject.getString("headUrl"));
-            result.put("nickname",null == jsonObject.getString("nickname")?"":jsonObject.getString("nickname"));
-            result.put("subscribe",null == jsonObject.getString("subscribe")?"":jsonObject.getString("subscribe"));
+            String uinfo = null;
+            if (StringUtils.isNotBlank(openId)){
+                uinfo = RedisCache.getWxUserInfo(Constants.WEIXIN_APPID, openId);
+                if (StringUtils.isNotBlank(uinfo)) {
+                    result.put("result", "success");
+                    result.put("uinfo", uinfo);
+                    return JSONObject.fromObject(result);
+                }
+            }
+            if (StringUtils.isBlank(uinfo)) {
+                uinfo = WeixinManager.newInstance(Constants.WEIXIN_APPID, Constants.WEIXIN_SECRET).getUserInfo(accessToken.getAccess_token(), accessToken.getOpenid());
+                logger.info("~~~~~~~~~~uinfo:" + uinfo);
+                JSONObject jsonObject = JSONObject.fromObject(uinfo);
+                Wxuser wxuser = (Wxuser) JSONObject.toBean(jsonObject, Wxuser.class);
+                RedisCache.setWxUserInfo(Constants.WEIXIN_APPID,wxuser.getOpenid(),uinfo);
+            }
+            result.put("result", "success");
+            result.put("uinfo", uinfo);
             return JSONObject.fromObject(result);
+
         } else {
-            result.put("result","fail");
-            result.put("message","非认证");
+            result.put("result", "fail");
+            result.put("message", "非认证");
             return JSONObject.fromObject(result);
         }
 
